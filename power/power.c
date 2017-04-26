@@ -427,8 +427,7 @@ static void samsung_power_hint(struct power_module *module,
     int len;
 
     /* Bail out if low-power mode is active */
-    if (current_power_profile == PROFILE_POWER_SAVE && hint != POWER_HINT_LOW_POWER
-            && hint != POWER_HINT_SET_PROFILE) {
+    if (current_power_profile == PROFILE_POWER_SAVE && hint != POWER_HINT_LOW_POWER) {
         ALOGW("%s: PROFILE_POWER_SAVE active, ignoring hint %d", __func__, hint);
         return;
     }
@@ -449,47 +448,12 @@ static void samsung_power_hint(struct power_module *module,
             ALOGV("%s: POWER_HINT_LAUNCH", __func__);
             send_boostpulse(samsung_pwr->boostpulse_fd);
             break;
-        case POWER_HINT_CPU_BOOST:
-            ALOGV("%s: POWER_HINT_CPU_BOOST", __func__);
-            boost((*(int32_t *)data));
-            break;
-        case POWER_HINT_SET_PROFILE:
-            ALOGV("%s: POWER_HINT_SET_PROFILE", __func__);
-            int profile = *((intptr_t *)data);
-            set_power_profile(samsung_pwr, profile);
-            break;
         case POWER_HINT_DISABLE_TOUCH:
             ALOGV("%s: POWER_HINT_DISABLE_TOUCH", __func__);
             sysfs_write(samsung_pwr->touchscreen_power_path, data ? "0" : "1");
             break;
         default:
             ALOGW("%s: Unknown power hint: %d", __func__, hint);
-            break;
-    }
-}
-
-static int samsung_get_feature(struct power_module *module __unused,
-                               feature_t feature)
-{
-    if (feature == POWER_FEATURE_SUPPORTED_PROFILES) {
-        return PROFILE_MAX;
-    }
-
-    return -1;
-}
-
-static void samsung_set_feature(struct power_module *module, feature_t feature, int state __unused)
-{
-    struct samsung_power_module *samsung_pwr = (struct samsung_power_module *) module;
-
-    switch (feature) {
-#ifdef TARGET_TAP_TO_WAKE_NODE
-        case POWER_FEATURE_DOUBLE_TAP_TO_WAKE:
-            ALOGV("%s: %s double tap to wake", __func__, state ? "enabling" : "disabling");
-            sysfs_write(TARGET_TAP_TO_WAKE_NODE, state > 0 ? "1" : "0");
-            break;
-#endif
-        default:
             break;
     }
 }
@@ -513,8 +477,6 @@ struct samsung_power_module HAL_MODULE_INFO_SYM = {
         .init = samsung_power_init,
         .setInteractive = samsung_power_set_interactive,
         .powerHint = samsung_power_hint,
-        .getFeature = samsung_get_feature,
-        .setFeature = samsung_set_feature
     },
 
     .lock = PTHREAD_MUTEX_INITIALIZER,
